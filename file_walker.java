@@ -11,7 +11,6 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
@@ -22,8 +21,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
 
 import javax.naming.directory.BasicAttributes;
 
@@ -167,7 +164,7 @@ public class file_walker implements Callable<Integer> {
         try (var executor_service = new ThreadPoolExecutor(
                 thread_count,
                 thread_count,
-                30, TimeUnit.SECONDS,
+                0, TimeUnit.SECONDS,
                 new ArrayBlockingQueue<>(queue_length),
                 Executors.defaultThreadFactory(),
                 new ThreadPoolExecutor.CallerRunsPolicy())) {
@@ -259,11 +256,15 @@ public class file_walker implements Callable<Integer> {
             List<Path> files = new ArrayList<>();
             List<Path> dirs = new ArrayList<>();
             try (var paths = Files.list(this.path)) {
-                var group = paths.filter(p -> file_walker.allow_file(p) || file_walker.allow_dir(p))
-                        .collect(Collectors.groupingBy(Files::isRegularFile));
-
-                files = (List<Path>) group.getOrDefault(true, Collections.EMPTY_LIST);
-                dirs = (List<Path>) group.getOrDefault(false, Collections.EMPTY_LIST);
+                paths.forEach(p -> {
+                    if (allow_dir(p)) {
+                        files.add(p);
+                    } else if (allow_dir(p)) {
+                        dirs.add(p);
+                    } else {
+                        System.err.format("unknown file type, file=%s\n", p);
+                    }
+                });
             } catch (IOException e) {
                 e.printStackTrace();
             }
