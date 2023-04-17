@@ -257,12 +257,12 @@ public class file_walker implements Callable<Integer> {
             List<Path> dirs = new ArrayList<>();
             try (var paths = Files.list(this.path)) {
                 paths.forEach(p -> {
-                    if (allow_dir(p)) {
+                    if (allow_file(p)) {
                         files.add(p);
                     } else if (allow_dir(p)) {
                         dirs.add(p);
                     } else {
-                        System.err.format("unknown file type, file=%s\n", p);
+                        System.err.format("not-allow file type, file=%s\n", p);
                     }
                 });
             } catch (IOException e) {
